@@ -323,5 +323,7 @@ export function calculateATS(text: string): ATSScore {
     missingKeywords: finalMissing,
     matchedKeywords: finalMatched,
     suggestions: suggestions.slice(0, 4),
+    scoringMethodology: "30-Point Heuristic Resume Scan Engine",
+    scoringDisclaimer: "Score is a heuristic benchmark modeled after modern ATS parsers (Workday, Greenhouse, Lever). It measures formatting, keyword density, section structure, and readability criteria.",
   };
 }

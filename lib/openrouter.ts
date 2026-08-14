@@ -110,7 +110,7 @@ async function fetchOpenRouter(
  */
 const INDIAN_MARKET_GUIDELINE = "Guidelines: When discussing financial metrics, budgets, salaries, package targets, scale, or metrics, use Indian currency symbols (₹, Rupee) and conventions (Lakhs, Crores, LPA, e.g. 15 LPA) rather than Western formats ($ or USD).";
 
-export async function askAI(prompt: string, systemPrompt?: string): Promise<string> {
+export async function askAI(prompt: string, systemPrompt?: string, temperature = 0.3): Promise<string> {
   const combinedSystem = systemPrompt
     ? `${systemPrompt}\n\n${INDIAN_MARKET_GUIDELINE}`
     : INDIAN_MARKET_GUIDELINE;
@@ -121,7 +121,7 @@ export async function askAI(prompt: string, systemPrompt?: string): Promise<stri
       { role: "user", content: prompt }
     ];
 
-    const content = await fetchOpenRouter(messages, 0.7, 2000, false);
+    const content = await fetchOpenRouter(messages, temperature, 2000, false);
 
     console.log("--- OpenRouter Raw Text Response ---");
     console.log(content);
@@ -139,7 +139,7 @@ export async function askAI(prompt: string, systemPrompt?: string): Promise<stri
  * JSON generation helper with built-in auto-retries and robust extraction.
  * Deploys OpenRouter models chain.
  */
-export async function askAIJSON<T>(prompt: string, systemPrompt?: string, retries = 2): Promise<T> {
+export async function askAIJSON<T>(prompt: string, systemPrompt?: string, retries = 2, temperature = 0.3): Promise<T> {
   const combinedSystem = (systemPrompt ? `${systemPrompt}\n\n` : "") +
     INDIAN_MARKET_GUIDELINE +
     "\n\nYou must respond ONLY with valid JSON. No explanation, no markdown, no backticks. Ensure ALL property names are double-quoted. Do NOT include any trailing commas. Just raw JSON.";
@@ -154,7 +154,7 @@ export async function askAIJSON<T>(prompt: string, systemPrompt?: string, retrie
 
   while (attempt <= retries) {
     try {
-      const rawResponse = await fetchOpenRouter(messages, 0.7, 4000, true);
+      const rawResponse = await fetchOpenRouter(messages, temperature, 4000, true);
 
       console.log(`--- OpenRouter Raw JSON Response (Attempt ${attempt + 1}) ---`);
       console.log(rawResponse);

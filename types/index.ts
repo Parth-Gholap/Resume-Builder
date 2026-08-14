@@ -122,6 +122,8 @@ export interface ATSScore {
   india_keyword_matches?: string[];
   keywordMatches?: { keyword: string; weight: number; layer: string; matchedText: string }[];
   missingKeywordDetails?: { keyword: string; weight: number }[];
+  scoringMethodology?: string;
+  scoringDisclaimer?: string;
 }
 
 export interface ContentReview {

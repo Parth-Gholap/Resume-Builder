@@ -59,7 +59,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { getUserBaseResume } = await import("@/lib/userResumeContext");
+    const { getUserJournalContext } = await import("@/lib/journalSync");
+
     const { contextFormatted: userDbResume } = await getUserBaseResume(supabase, user.id);
+    const { formattedJournalBlock } = await getUserJournalContext(supabase, user.id);
 
     const hasJD = !!targetJobDescription && targetJobDescription.trim().length > 0;
     const hasATS = atsMissingKeywords && atsMissingKeywords.length > 0;
@@ -69,12 +72,14 @@ export async function POST(req: NextRequest) {
 TASK: Rewrite the following resume text into exactly 3 variations based on strict optimization dimensions.
 
 STRICT PERSONALIZATION & TRUTHFULNESS RULES:
-1. Base all rewrites strictly on the candidate's actual background and uploaded resume.
-2. NO HALLUCINATIONS: You MUST NOT invent metrics, accuracy percentages, team sizes, or revenue numbers not present in original text.
+1. Base all rewrites strictly on the candidate's actual background, uploaded resume, and logged journal wins.
+2. NO HALLUCINATIONS: You MUST NOT invent metrics, accuracy percentages, team sizes, or revenue numbers not present in candidate's original text or journal.
 3. NO TEMPLATE PLACEHOLDERS: Do NOT output placeholders like "Company Name", "Professional Role", etc.
 4. AUTHENTIC HUMAN TONE: Write in clean, natural human phrasing. Avoid robotic AI cliché buzzwords.
 
 ${userDbResume}
+
+${formattedJournalBlock}
 
 SECTION CONTEXT: ${context || "Resume section"}
 
@@ -103,12 +108,18 @@ Output ONLY valid JSON.`;
       "You are a professional resume copywriter who strictly adheres to truthfulness and natural human phrasing."
     );
     
-    // Post-process with humanization layer to bypass AI detectors and clean cliché buzzwords
+    // Post-process with humanization layer and hallucination validator
     const { humanizeText } = await import("@/lib/humanizer");
-    const humanizedSuggestions = (result?.suggestions || []).map((s) => humanizeText(s));
+    const { verifyAndSanitizeMetrics } = await import("@/lib/aiValidator");
+
+    const validatedSuggestions = (result?.suggestions || []).map((s) => {
+      const humanized = humanizeText(s);
+      const { sanitizedText } = verifyAndSanitizeMetrics(humanized, text, userDbResume);
+      return sanitizedText;
+    });
 
     return NextResponse.json({
-      suggestions: humanizedSuggestions,
+      suggestions: validatedSuggestions,
     });
   } catch (err: any) {
     console.error("AI Rewrite error:", err);

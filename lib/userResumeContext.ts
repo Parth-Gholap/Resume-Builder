@@ -31,7 +31,7 @@ export async function getUserBaseResume(supabase: SupabaseClient, userId: string
 
     const contextFormatted = `CANDIDATE'S ACTUAL DATABASE UPLOADED RESUME:
 ==================================================
-${formattedData.slice(0, 4000)}
+${formattedData.slice(0, 10000)}
 ==================================================`;
 
     return { rawText, resumeData, contextFormatted };

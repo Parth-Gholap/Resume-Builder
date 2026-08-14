@@ -87,9 +87,12 @@ STRICT PERSONALIZATION RULES:
     const rawResult = await askAI(prompt, systemPrompt);
 
     const { humanizeText } = await import("@/lib/humanizer");
-    const humanizedResult = humanizeText(rawResult);
+    const { verifyAndSanitizeMetrics } = await import("@/lib/aiValidator");
 
-    return NextResponse.json({ result: humanizedResult.trim() });
+    const humanizedResult = humanizeText(rawResult);
+    const { sanitizedText } = verifyAndSanitizeMetrics(humanizedResult, context, personalizationBlock);
+
+    return NextResponse.json({ result: sanitizedText.trim() });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed to generate content" }, { status: 500 });
