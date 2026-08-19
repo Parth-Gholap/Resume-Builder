@@ -150,7 +150,11 @@ export default function TailorPage() {
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [jobDescription, setJobDescription] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [targetAtsPlatform, setTargetAtsPlatform] = useState<string>("generic");
   const [jdMatchResult, setJdMatchResult] = useState<JDMatch | null>(null);
+  const [skillsTab, setSkillsTab] = useState<"all" | "hard" | "soft">("all");
+  const [diffMode, setDiffMode] = useState(false);
 
   const [rewriteTargets, setRewriteTargets] = useState<{
     field: string; index?: number; bulletIndex?: number; original: string;
@@ -198,6 +202,23 @@ export default function TailorPage() {
     if (found) { setSelectedResume(found); buildRewriteTargets(found.resume_data); }
   }, [selectedResumeId, resumes]);
 
+  // Auto-detect ATS platform when company name or JD changes
+  useEffect(() => {
+    const textToCheck = `${companyName} ${jobDescription}`;
+    const lower = textToCheck.toLowerCase();
+    if (lower.includes("greenhouse") || lower.includes("gh_jid") || lower.includes("google") || lower.includes("stripe") || lower.includes("airbnb")) {
+      setTargetAtsPlatform("greenhouse");
+    } else if (lower.includes("myworkdayjobs") || lower.includes("workday") || lower.includes("amazon") || lower.includes("meta") || lower.includes("apple") || lower.includes("infosys") || lower.includes("cognizant")) {
+      setTargetAtsPlatform("workday");
+    } else if (lower.includes("lever.co") || lower.includes("lever") || lower.includes("netflix") || lower.includes("uber") || lower.includes("swiggy")) {
+      setTargetAtsPlatform("lever");
+    } else if (lower.includes("icims") || lower.includes("microsoft")) {
+      setTargetAtsPlatform("icims");
+    } else if (lower.includes("taleo") || lower.includes("oracle") || lower.includes("tcs") || lower.includes("wipro")) {
+      setTargetAtsPlatform("taleo");
+    }
+  }, [companyName, jobDescription]);
+
   const buildRewriteTargets = (data: ResumeData) => {
     const targets: { field: string; index?: number; bulletIndex?: number; original: string }[] = [];
     if (data.summary?.trim().length > 10) targets.push({ field: "summary", original: data.summary });
@@ -219,7 +240,12 @@ export default function TailorPage() {
       const res = await fetch("/api/jd-match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeData: selectedResume.resume_data, jobDescription }),
+        body: JSON.stringify({ 
+          resumeData: selectedResume.resume_data, 
+          jobDescription,
+          targetAtsPlatform,
+          companyName 
+        }),
       });
       const data = await res.json();
       if (res.status === 403) throw new Error(data.error || `Insufficient credits. Analyze Match costs ${CREDIT_COSTS.JD_MATCH} credits.`);
@@ -494,15 +520,49 @@ export default function TailorPage() {
             {/* STEP 2 */}
             {currentStep >= 2 && selectedResume && (
               <div ref={step2Ref}>
-                <StepCard stepNum={2} title="Paste Job Description" subtitle="Drop the full JD — AI will detect keyword gaps and generate targeted rewrites." currentStep={currentStep} icon={Target}>
+                <StepCard stepNum={2} title="Job Description & ATS Targeting" subtitle="Select target ATS or company — AI will optimize layout, keywords, and parsing rules." currentStep={currentStep} icon={Target}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem", marginBottom: "0.5rem" }}>
+                    <div>
+                      <label style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "0.3rem" }}>
+                        Target Company (Auto-detects ATS)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Google, Amazon, TCS, Stripe"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="input"
+                        style={{ fontSize: "0.85rem", padding: "0.5rem 0.8rem" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "0.3rem" }}>
+                        Target ATS Platform
+                      </label>
+                      <select
+                        value={targetAtsPlatform}
+                        onChange={(e) => setTargetAtsPlatform(e.target.value)}
+                        className="input"
+                        style={{ fontSize: "0.85rem", padding: "0.5rem 0.8rem" }}
+                      >
+                        <option value="generic">Universal Modern ATS</option>
+                        <option value="workday">Workday ATS (Strict Single Column)</option>
+                        <option value="greenhouse">Greenhouse (Tech & Startup Standard)</option>
+                        <option value="lever">Lever (Timeline & Skill Focused)</option>
+                        <option value="icims">iCIMS (High Keyword Density)</option>
+                        <option value="taleo">Oracle Taleo (Enterprise Database)</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div style={{ position: "relative" }}>
                     <textarea
                       className="input"
-                      rows={9}
+                      rows={8}
                       placeholder="Paste the complete job description here..."
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
-                      style={{ fontSize: "0.875rem", lineHeight: 1.65, resize: "vertical", minHeight: 180 }}
+                      style={{ fontSize: "0.875rem", lineHeight: 1.65, resize: "vertical", minHeight: 160 }}
                     />
                     {jobDescription && (
                       <div style={{
@@ -558,9 +618,19 @@ export default function TailorPage() {
                       </div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", marginBottom: "0.3rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
                         <TrendingUp size={15} color={getScoreColor(jdMatchResult.matchScore).color} />
                         <h2 style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: "1.1rem", margin: 0 }}>Match Analysis</h2>
+                        {jdMatchResult.targetAtsPlatform && (
+                          <span style={{ fontSize: "0.7rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "999px", background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--border-accent)" }}>
+                            Target: {jdMatchResult.targetAtsPlatform}
+                          </span>
+                        )}
+                        {jdMatchResult.humanizationScore !== undefined && (
+                          <span style={{ fontSize: "0.7rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: "999px", background: "rgba(16,185,129,0.1)", color: "#10b981", border: "1px solid rgba(16,185,129,0.2)" }}>
+                            Humanization: {jdMatchResult.humanizationScore}%
+                          </span>
+                        )}
                       </div>
                       <div style={{
                         display: "inline-flex", alignItems: "center",
@@ -581,6 +651,61 @@ export default function TailorPage() {
                     </div>
                   </div>
 
+                  {/* ATS Platform Advice Banner */}
+                  {jdMatchResult.atsPlatformAdvice && jdMatchResult.atsPlatformAdvice.length > 0 && (
+                    <div style={{ padding: "0.9rem 1.4rem", background: "var(--bg-2)", borderBottom: "1px solid var(--border)", fontSize: "0.78rem" }}>
+                      <span style={{ fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", fontSize: "0.68rem", display: "block", marginBottom: "0.3rem" }}>
+                        💡 {jdMatchResult.targetAtsPlatform || "ATS"} Optimization Guidelines:
+                      </span>
+                      <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                        {jdMatchResult.atsPlatformAdvice.map((advice, aIdx) => (
+                          <li key={aIdx}>{advice}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Skills Missing Sub-tabs */}
+                  <div style={{ padding: "0.8rem 1.4rem", borderBottom: "1px solid var(--border)", display: "flex", gap: "0.4rem" }}>
+                    <button
+                      onClick={() => setSkillsTab("all")}
+                      style={{
+                        padding: "0.25rem 0.7rem", borderRadius: "6px", fontSize: "0.72rem", fontWeight: 700,
+                        background: skillsTab === "all" ? "var(--accent)" : "var(--bg-2)",
+                        color: skillsTab === "all" ? "#fff" : "var(--text-muted)",
+                        border: "1px solid var(--border)", cursor: "pointer",
+                      }}
+                    >
+                      All Missing ({jdMatchResult.missingKeywords.length})
+                    </button>
+                    {jdMatchResult.hardSkillsMissing && jdMatchResult.hardSkillsMissing.length > 0 && (
+                      <button
+                        onClick={() => setSkillsTab("hard")}
+                        style={{
+                          padding: "0.25rem 0.7rem", borderRadius: "6px", fontSize: "0.72rem", fontWeight: 700,
+                          background: skillsTab === "hard" ? "var(--accent)" : "var(--bg-2)",
+                          color: skillsTab === "hard" ? "#fff" : "var(--text-muted)",
+                          border: "1px solid var(--border)", cursor: "pointer",
+                        }}
+                      >
+                        Hard Technical Skills ({jdMatchResult.hardSkillsMissing.length})
+                      </button>
+                    )}
+                    {jdMatchResult.softSkillsMissing && jdMatchResult.softSkillsMissing.length > 0 && (
+                      <button
+                        onClick={() => setSkillsTab("soft")}
+                        style={{
+                          padding: "0.25rem 0.7rem", borderRadius: "6px", fontSize: "0.72rem", fontWeight: 700,
+                          background: skillsTab === "soft" ? "var(--accent)" : "var(--bg-2)",
+                          color: skillsTab === "soft" ? "#fff" : "var(--text-muted)",
+                          border: "1px solid var(--border)", cursor: "pointer",
+                        }}
+                      >
+                        Soft & Leadership Skills ({jdMatchResult.softSkillsMissing.length})
+                      </button>
+                    )}
+                  </div>
+
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
                     {jdMatchResult.matchedKeywords.length > 0 && (
                       <div style={{ padding: "1.1rem 1.3rem", borderRight: "1px solid var(--border)" }}>
@@ -597,22 +722,142 @@ export default function TailorPage() {
                         </div>
                       </div>
                     )}
-                    {jdMatchResult.missingKeywords.length > 0 && (
-                      <div style={{ padding: "1.1rem 1.3rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem" }}>
-                          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444" }} />
-                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                            Missing ({jdMatchResult.missingKeywords.length})
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
-                          {jdMatchResult.missingKeywords.map((kw, i) => (
-                            <span key={i} style={{ padding: "0.18rem 0.55rem", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 600, background: "rgba(239,68,68,0.08)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.18)" }}>+ {kw}</span>
-                          ))}
-                        </div>
+                    
+                    <div style={{ padding: "1.1rem 1.3rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem" }}>
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444" }} />
+                        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          Missing (
+                            {skillsTab === "hard"
+                              ? jdMatchResult.hardSkillsMissing?.length || 0
+                              : skillsTab === "soft"
+                              ? jdMatchResult.softSkillsMissing?.length || 0
+                              : jdMatchResult.missingKeywords.length}
+                          )
+                        </span>
                       </div>
-                    )}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+                        {(skillsTab === "hard"
+                          ? jdMatchResult.hardSkillsMissing || []
+                          : skillsTab === "soft"
+                          ? jdMatchResult.softSkillsMissing || []
+                          : jdMatchResult.missingKeywords
+                        ).map((kw, i) => (
+                          <span key={i} style={{ padding: "0.18rem 0.55rem", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 600, background: "rgba(239,68,68,0.08)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.18)" }}>+ {kw}</span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Granular Bullet-by-Bullet Breakdown */}
+                  {jdMatchResult.bulletBreakdown && jdMatchResult.bulletBreakdown.length > 0 && (
+                    <div style={{ borderTop: "1px solid var(--border)", padding: "1.2rem 1.4rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase", color: "var(--accent)", letterSpacing: "0.05em" }}>
+                          ✦ Granular Bullet-by-Bullet Breakdown (Resume Worded Standard)
+                        </span>
+                        <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                          {jdMatchResult.bulletBreakdown.length} bullets audited
+                        </span>
+                      </div>
+
+                      <div style={{ display: "grid", gap: "0.6rem" }}>
+                        {jdMatchResult.bulletBreakdown.map((b, bIdx) => (
+                          <div
+                            key={bIdx}
+                            style={{
+                              padding: "0.8rem 1rem",
+                              borderRadius: "10px",
+                              background: "var(--bg-2)",
+                              border: "1px solid var(--border)",
+                              display: "grid",
+                              gap: "0.4rem",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.4rem" }}>
+                              <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)" }}>
+                                {b.section}
+                              </span>
+                              <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                                <span style={{
+                                  fontSize: "0.65rem", fontWeight: 700, padding: "0.1rem 0.45rem", borderRadius: "4px",
+                                  background: b.impactScore >= 8 ? "rgba(16,185,129,0.1)" : b.impactScore >= 5 ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)",
+                                  color: b.impactScore >= 8 ? "#10b981" : b.impactScore >= 5 ? "#f59e0b" : "#ef4444",
+                                  border: `1px solid ${b.impactScore >= 8 ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)"}`,
+                                }}>
+                                  Impact: {b.impactScore}/10
+                                </span>
+                                <span style={{
+                                  fontSize: "0.65rem", fontWeight: 700, padding: "0.1rem 0.45rem", borderRadius: "4px",
+                                  background: "var(--bg-3)", color: "var(--text-secondary)", border: "1px solid var(--border)",
+                                }}>
+                                  Verb: {b.actionVerbStrength}
+                                </span>
+                                {b.hasMetric && (
+                                  <span style={{
+                                    fontSize: "0.65rem", fontWeight: 700, padding: "0.1rem 0.45rem", borderRadius: "4px",
+                                    background: "rgba(99,102,241,0.1)", color: "var(--accent)", border: "1px solid var(--border-accent)",
+                                  }}>
+                                    Quantified ✓
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                              &quot;{b.originalText}&quot;
+                            </p>
+
+                            <div style={{
+                              padding: "0.5rem 0.75rem",
+                              borderRadius: "7px",
+                              background: "rgba(99,102,241,0.04)",
+                              border: "1px solid rgba(99,102,241,0.15)",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              gap: "0.6rem",
+                            }}>
+                              <span style={{ fontSize: "0.8rem", color: "var(--text)", fontWeight: 500 }}>
+                                {b.suggestedRewrite}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  // Apply rewrite directly to resume
+                                  const updatedData = { ...selectedResume.resume_data };
+                                  if (updatedData.workExperience) {
+                                    for (const exp of updatedData.workExperience) {
+                                      const idx = exp.bullets.indexOf(b.originalText);
+                                      if (idx !== -1) {
+                                        exp.bullets[idx] = b.suggestedRewrite;
+                                        break;
+                                      }
+                                    }
+                                  }
+                                  setSelectedResume({ ...selectedResume, resume_data: updatedData });
+                                  b.accepted = true;
+                                }}
+                                style={{
+                                  padding: "0.25rem 0.65rem",
+                                  borderRadius: "6px",
+                                  fontSize: "0.72rem",
+                                  fontWeight: 700,
+                                  background: b.accepted ? "#10b981" : "var(--accent)",
+                                  color: "#fff",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  whiteSpace: "nowrap",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {b.accepted ? "Applied ✓" : "Accept 1-Click"}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {jdMatchResult.priorityAdditions?.length > 0 && (
                     <div style={{ margin: "0 1.1rem 1.1rem", background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: "10px", padding: "0.85rem 1rem" }}>

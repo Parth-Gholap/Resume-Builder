@@ -138,12 +138,74 @@ export interface ContentReview {
   quantificationTips: string[];
 }
 
+export interface BulletFeedback {
+  id: string;
+  originalText: string;
+  section: string;
+  bulletIndex: number;
+  impactScore: number; // 1-10
+  actionVerbStrength: "Strong" | "Medium" | "Weak";
+  hasMetric: boolean;
+  suggestedRewrite: string;
+  accepted?: boolean;
+}
+
 export interface JDMatch {
   matchScore: number;
   matchedKeywords: string[];
   missingKeywords: string[];
+  hardSkillsMissing?: string[];
+  softSkillsMissing?: string[];
   suggestions: string[];
   priorityAdditions: string[];
+  targetAtsPlatform?: string;
+  atsPlatformAdvice?: string[];
+  bulletBreakdown?: BulletFeedback[];
+  humanizationScore?: number;
+  deterministicSeed?: number;
+}
+
+export interface STARAnswer {
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+}
+
+export interface InterviewQuestion {
+  id: string;
+  question: string;
+  category: "Behavioral" | "Technical" | "Leadership" | "Scenario";
+  difficulty: "Standard" | "Challenging" | "Advanced";
+  starAnswer: STARAnswer;
+  keyKeywordsToMention: string[];
+  interviewerIntent: string;
+  userPracticeAnswer?: string;
+  practiceFeedback?: {
+    score: number;
+    strengths: string[];
+    improvements: string[];
+  };
+}
+
+export interface LinkedInOptimization {
+  headlineOptions: {
+    title: string;
+    style: "Keyword-Dense Search Optimized" | "Executive & Authority" | "Action & Metric Focused";
+    characterCount: number;
+  }[];
+  aboutSummary: {
+    hook: string;
+    body: string;
+    skillsBlock: string;
+    fullText: string;
+  };
+  experienceHighlights: {
+    company: string;
+    role: string;
+    optimizedBullets: string[];
+  }[];
+  topSearchKeywords: string[];
 }
 
 export interface Resume {

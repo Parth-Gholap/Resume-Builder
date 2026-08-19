@@ -30,15 +30,23 @@ const OPENROUTER_JSON_MODELS = [
   "google/gemini-2.5-flash",                  // Gemini 2.5 Flash
 ];
 
+interface OpenRouterOptions {
+  temperature?: number;
+  maxTokens?: number;
+  isJson?: boolean;
+  seed?: number;
+}
+
 /**
  * Robust helper to fetch completions from OpenRouter using a cascading model chain
  * to self-heal when upstream models encounter transient rate limits.
  */
 async function fetchOpenRouter(
   messages: any[],
-  temperature: number,
-  maxTokens: number,
-  isJson: boolean = false
+  temperature: number = 0.3,
+  maxTokens: number = 2000,
+  isJson: boolean = false,
+  seed?: number
 ): Promise<string> {
   const openRouterKey = process.env.OPENROUTER_API_KEY;
   if (!openRouterKey || openRouterKey.startsWith("your-") || openRouterKey === "sk-or-your-key-here") {
@@ -60,6 +68,10 @@ async function fetchOpenRouter(
         temperature,
         max_tokens: maxTokens,
       };
+
+      if (seed !== undefined) {
+        bodyPayload.seed = seed;
+      }
 
       if (isJson) {
         bodyPayload.response_format = { type: "json_object" };
@@ -110,7 +122,12 @@ async function fetchOpenRouter(
  */
 const INDIAN_MARKET_GUIDELINE = "Guidelines: When discussing financial metrics, budgets, salaries, package targets, scale, or metrics, use Indian currency symbols (₹, Rupee) and conventions (Lakhs, Crores, LPA, e.g. 15 LPA) rather than Western formats ($ or USD).";
 
-export async function askAI(prompt: string, systemPrompt?: string, temperature = 0.3): Promise<string> {
+export async function askAI(
+  prompt: string, 
+  systemPrompt?: string, 
+  temperature: number = 0.3,
+  seed?: number
+): Promise<string> {
   const combinedSystem = systemPrompt
     ? `${systemPrompt}\n\n${INDIAN_MARKET_GUIDELINE}`
     : INDIAN_MARKET_GUIDELINE;
@@ -121,7 +138,7 @@ export async function askAI(prompt: string, systemPrompt?: string, temperature =
       { role: "user", content: prompt }
     ];
 
-    const content = await fetchOpenRouter(messages, temperature, 2000, false);
+    const content = await fetchOpenRouter(messages, temperature, 2000, false, seed);
 
     console.log("--- OpenRouter Raw Text Response ---");
     console.log(content);
@@ -139,7 +156,13 @@ export async function askAI(prompt: string, systemPrompt?: string, temperature =
  * JSON generation helper with built-in auto-retries and robust extraction.
  * Deploys OpenRouter models chain.
  */
-export async function askAIJSON<T>(prompt: string, systemPrompt?: string, retries = 2, temperature = 0.3): Promise<T> {
+export async function askAIJSON<T>(
+  prompt: string, 
+  systemPrompt?: string, 
+  retries = 2, 
+  temperature = 0.3,
+  seed?: number
+): Promise<T> {
   const combinedSystem = (systemPrompt ? `${systemPrompt}\n\n` : "") +
     INDIAN_MARKET_GUIDELINE +
     "\n\nYou must respond ONLY with valid JSON. No explanation, no markdown, no backticks. Ensure ALL property names are double-quoted. Do NOT include any trailing commas. Just raw JSON.";
@@ -154,7 +177,7 @@ export async function askAIJSON<T>(prompt: string, systemPrompt?: string, retrie
 
   while (attempt <= retries) {
     try {
-      const rawResponse = await fetchOpenRouter(messages, temperature, 4000, true);
+      const rawResponse = await fetchOpenRouter(messages, temperature, 4000, true, seed);
 
       console.log(`--- OpenRouter Raw JSON Response (Attempt ${attempt + 1}) ---`);
       console.log(rawResponse);

@@ -391,20 +391,81 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Career Copilot link-out */}
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 transition-colors hover:border-indigo-300 dark:hover:border-indigo-800">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div className="text-[13.5px] truncate">
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">Copilot</span>
-              <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline"> — Skill Gap · Market Awareness · Negotiation & Offers</span>
-            </div>
+        {/* AI Power Suite Tools Grid */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-[16px] text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <Sparkles className="w-4.5 h-4.5 text-indigo-600" />
+              <span>AI Job Search & Placement Suite</span>
+            </h3>
+            <span className="text-xs text-neutral-500">2026 Competitive Advantage</span>
           </div>
-          <Link href="/career-copilot" className="text-[13px] font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1 shrink-0 hover:underline">
-            Open Copilot <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Tool 1: Named ATS Tailor */}
+            <Link
+              href="/resume/tailor"
+              className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-indigo-500 hover:shadow-md transition-all group no-underline"
+            >
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                <TargetIcon className="w-5 h-5" />
+              </div>
+              <div className="font-semibold text-[14px] text-neutral-900 dark:text-neutral-100 mb-1">
+                Named ATS Tailor
+              </div>
+              <p className="text-[12px] text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                Workday, Greenhouse & Lever scoring with 1-click bullet rewrites.
+              </p>
+            </Link>
+
+            {/* Tool 2: LinkedIn Profile Optimizer */}
+            <Link
+              href="/dashboard/linkedin"
+              className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-blue-500 hover:shadow-md transition-all group no-underline"
+            >
+              <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="font-semibold text-[14px] text-neutral-900 dark:text-neutral-100 mb-1">
+                LinkedIn Optimizer
+              </div>
+              <p className="text-[12px] text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                Search-optimized headlines, 3-part About hooks, and bullet alignment.
+              </p>
+            </Link>
+
+            {/* Tool 3: STAR Interview Prep */}
+            <Link
+              href="/dashboard/interview-prep"
+              className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-emerald-500 hover:shadow-md transition-all group no-underline"
+            >
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                <Bot className="w-5 h-5" />
+              </div>
+              <div className="font-semibold text-[14px] text-neutral-900 dark:text-neutral-100 mb-1">
+                STAR Interview Prep
+              </div>
+              <p className="text-[12px] text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                Predict 8 tailored questions with pre-filled Situation, Task, Action, Result answers.
+              </p>
+            </Link>
+
+            {/* Tool 4: Cover Letter Writer */}
+            <Link
+              href="/dashboard/cover-letter"
+              className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-purple-500 hover:shadow-md transition-all group no-underline"
+            >
+              <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div className="font-semibold text-[14px] text-neutral-900 dark:text-neutral-100 mb-1">
+                Cover Letter Writer
+              </div>
+              <p className="text-[12px] text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                Executive & conversational tone letters mapped to real resume metrics.
+              </p>
+            </Link>
+          </div>
         </div>
 
         {/* Resumes list */}

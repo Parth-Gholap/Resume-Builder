@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
     // --------------------------------
 
-    const { resumeId, jobDescription } = await req.json();
+    const { resumeId, jobDescription, tone = "Professional" } = await req.json();
     if (!resumeId || !jobDescription) {
       return NextResponse.json({ error: "Missing resumeId or jobDescription." }, { status: 400 });
     }
@@ -43,23 +43,31 @@ export async function POST(req: NextRequest) {
     }
 
     const resumeContent = JSON.stringify(resume.resume_data);
-    const prompt = `Resume Content:\n${resumeContent}\n\nJob Description:\n${jobDescription}`;
+    const prompt = `Resume Content:\n${resumeContent}\n\nJob Description:\n${jobDescription}\n\nTarget Tone: ${tone}`;
 
     const systemPrompt = `You are an elite executive career strategist and corporate communications expert with 15+ years of experience placing candidates at Fortune 500 companies and top-tier tech firms. You know exactly how hiring managers and recruiters read cover letters: they look for immediate value alignment, not a regurgitation of the resume.
 
 Your job is to analyze the candidate's resume and the target Job Description (JD), and write a highly persuasive, customized cover letter that connects the candidate's specific achievements directly to the company's pain points.
 
+TARGET TONE: ${tone}
+- Professional: Polished, respectful, standard corporate tone.
+- Conversational: Warm, engaging, modern tech startup voice.
+- Creative: Bold hook, unique perspective, storytelling-driven.
+- Executive: Authoritative, strategic vision, high-level business impact.
+
 RULES:
 - Value Over Summary: Do not just summarize the resume. Connect a specific past achievement to a specific requirement in the JD.
-- Tone & Style: Confident, professional, and action-oriented. No generic fluff. Open with a strong hook.
-- Never Invent Facts: If the resume doesn't have a specific metric, do not fabricate one. Rely only on the provided resume data.
+- Confident and action-oriented. No generic AI fluff (avoid "spearheaded", "synergized", "leveraged").
+- Never Invent Facts: Rely only on the provided resume data.
 - Indian Market Context: Where applicable, understand Indian financial metrics (₹, Lakhs, Crores) and market dynamics.
 - Length Constraint: Must be under 350 words. Respect the reader's time.
 
 Return ONLY the raw cover letter text. Do not return JSON. No chat intro, no markdown code blocks. Just the formatted letter ready to be sent.`;
 
+    const { humanizeText } = await import("@/lib/humanizer");
     const result = await askAI(prompt, systemPrompt);
-    return NextResponse.json({ letter: result.trim() });
+    const humanizedResult = humanizeText(result.trim());
+    return NextResponse.json({ letter: humanizedResult });
   } catch (err: unknown) {
     console.error("Cover letter generation failed:", err);
     return NextResponse.json({ error: "Failed to generate cover letter." }, { status: 500 });

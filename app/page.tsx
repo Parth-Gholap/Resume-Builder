@@ -18,10 +18,11 @@ import {
   TrendingUp,
   RefreshCw,
   ChevronDown,
-  ShieldCheck,
-  Send,
+  Zap,
   Award,
+  Send,
 } from "lucide-react";
+import QuickScanModal from "@/components/QuickScanModal";
 import { useEffect, useState, useRef } from "react";
 
 /* ───── Animated Counter ───── */
@@ -196,6 +197,7 @@ export default function Home() {
     aiRunsCount: 350,
     averageATS: 78,
   });
+  const [isQuickScanOpen, setIsQuickScanOpen] = useState(false);
   const howItWorksRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -270,17 +272,24 @@ export default function Home() {
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link href="/resume/upload" className="w-full sm:w-auto no-underline">
                   <Button size="lg" fullWidth icon={<Upload size={18} />}>
                     Start free — find what you&apos;re missing
                   </Button>
                 </Link>
                 <button
-                  onClick={scrollToHowItWorks}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] font-semibold transition-all duration-200"
+                  onClick={() => setIsQuickScanOpen(true)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-[var(--accent)] font-bold transition-all duration-200"
                 >
-                  <span>See how it works</span>
+                  <Zap size={16} />
+                  <span>Free 30s Quick Scan</span>
+                </button>
+                <button
+                  onClick={scrollToHowItWorks}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] font-semibold transition-all duration-200"
+                >
+                  <span>How it works</span>
                   <ChevronDown size={16} />
                 </button>
               </div>
@@ -695,6 +704,8 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
+      <QuickScanModal isOpen={isQuickScanOpen} onClose={() => setIsQuickScanOpen(false)} />
     </main>
   );
 }
